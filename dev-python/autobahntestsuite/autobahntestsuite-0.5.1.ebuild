@@ -23,4 +23,5 @@ DEPEND="app-arch/unzip
 	dev-python/setuptools"
 RDEPEND="dev-python/autobahn
 	dev-python/setuptools
-	>=dev-python/twisted-11.0.0"
+	>=dev-python/twisted-11.0.0
+	>=dev-python/twisted-web-11.0.0"
