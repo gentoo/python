@@ -1,0 +1,22 @@
+# ChangeLog for dev-python/ws4py
+# Copyright 1999-2012 Gentoo Foundation; Distributed under the GPL v2
+# $Header: /var/cvsroot/gentoo-x86/dev-python/ws4py/ChangeLog,v 1.3 2012/04/24 02:31:04 vapier Exp $
+
+*ws4py-0.2.1-r2 (24 Apr 2012)
+
+  24 Apr 2012; Mike Frysinger <vapier@gentoo.org> +ws4py-0.2.1-r2.ebuild,
+  metadata.xml, ws4py-9999.ebuild:
+  Further refine client/server install and gevent requirement.
+
+*ws4py-0.2.1-r1 (20 Apr 2012)
+
+  20 Apr 2012; Mike Frysinger <vapier@gentoo.org> +ws4py-0.2.1-r1.ebuild,
+  +files/ws4py-0.2.1-process-data.patch:
+  Add fix from Jon Salz for partial data transfers.
+
+*ws4py-9999 (17 Apr 2012)
+*ws4py-0.2.1 (17 Apr 2012)
+
+  17 Apr 2012; Mike Frysinger <vapier@gentoo.org> +ws4py-0.2.1.ebuild,
+  +ws4py-9999.ebuild, +metadata.xml:
+  Initial ebuild import for ChromiumOS.
