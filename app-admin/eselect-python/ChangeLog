@@ -1,0 +1,7 @@
+*eselect-python-20111108-r1 (25 Jun 2012)
+
+  25 Jun 2012;  <testuser@gentoo.org> +eselect-python-20111108-r1.ebuild,
+  +files/python-eselect.patch, +files/wrapper.patch, +metadata.xml,
+  +python.eselect:
+  [app-admin/eselect-python] A pypy aware version
+

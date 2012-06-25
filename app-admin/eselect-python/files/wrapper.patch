@@ -1,0 +1,25 @@
+diff -ur eselect-python-20111108.orig/python-wrapper.c eselect-python-20111108/python-wrapper.c
+--- python-wrapper.c	2011-11-09 07:15:22.000000000 +0800
++++ python-wrapper.c	2012-06-06 15:14:49.712818087 +0800
+@@ -82,7 +82,7 @@
+ /* True if a valid file name, and not "python" */
+ int valid_interpreter(const char* name)
+ {
+-	if (! name || ! *name || (strcmp(name, "python") == 0))
++	if (! name || ! *name || (strcmp(name, "python") == 0) || (strncmp(name, "pypy-c", 6) == 0) )
+ 	{
+ 		return 0;
+ 	}
+@@ -91,10 +91,9 @@
+ 
+ int get_version(const char* name)
+ {
+-	/* Only find files beginning with "python" - this is a fallback,
+-	 * so we only want CPython
++	/* Find files beginning with "python" && "pypy-c1"; so we want CPython && pypy.
+ 	 */
+-	if (! valid_interpreter(name) || strncmp(name, "python", 6) != 0)
++	if (! (valid_interpreter(name)) || strncmp(name, "python", 6) != 0  || (strncmp(name, "pypy-c", 6) != 0))
+ 		return -1;
+ 	int pos = 6;
+ 	int major = 0;
