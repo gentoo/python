@@ -24,8 +24,9 @@ RDEPEND=">=sys-fs/udev-151
 	pyqt4? ( dev-python/PyQt4 )
 	pyside? ( dev-python/pyside )"
 DEPEND="${RDEPEND}
-	dev-python/setuptools"
-	# test? ( dev-python/mock )"
+	dev-python/setuptools
+	test? ( dev-python/mock
+	dev-cpp/gccxml )"
 
 DOCS="CHANGES.rst README.rst"
 
