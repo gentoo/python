@@ -1,0 +1,37 @@
+# HG changeset patch
+# User Ned Deily <nad@acm.org>
+# Date 1391647990 28800
+#      Wed Feb 05 16:53:10 2014 -0800
+# Branch 3.3
+# Node ID 9131a9edcac4880b2759c82fb38f13f6f871a73e
+# Parent  b5fe07d39e163240aed04f71ae7862c7cf36c1e7
+Issue #20374: Avoid compiler warnings when compiling readline with libedit.
+
+diff --git a/Modules/readline.c b/Modules/readline.c
+--- a/Modules/readline.c
++++ b/Modules/readline.c
+@@ -773,15 +773,24 @@
+     return result;
+ }
+ 
++
+ static int
++#if defined(_RL_FUNCTION_TYPEDEF)
+ on_startup_hook(void)
++#else
++on_startup_hook()
++#endif
+ {
+     return on_hook(startup_hook);
+ }
+ 
+ #ifdef HAVE_RL_PRE_INPUT_HOOK
+ static int
++#if defined(_RL_FUNCTION_TYPEDEF)
+ on_pre_input_hook(void)
++#else
++on_pre_input_hook()
++#endif
+ {
+     return on_hook(pre_input_hook);
+ }
