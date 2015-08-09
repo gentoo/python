@@ -9,7 +9,6 @@ WANT_LIBTOOL="none"
 inherit autotools eutils flag-o-matic multilib pax-utils python-utils-r1 toolchain-funcs multiprocessing
 
 MY_P="Python-${PV}"
-PATCHSET_REVISION="1"
 
 DESCRIPTION="An interpreted, interactive, object-oriented programming language"
 HOMEPAGE="http://www.python.org/"
@@ -65,7 +64,7 @@ src_prepare() {
 	fi
 
 	EPATCH_EXCLUDE="${excluded_patches}" EPATCH_SUFFIX="patch" \
-		epatch "${FILESDIR}/3.2"
+		epatch "${FILESDIR}/${SLOT}"
 
 	sed -i -e "s:@@GENTOO_LIBDIR@@:$(get_libdir):g" \
 		Lib/distutils/command/install.py \
@@ -135,7 +134,7 @@ src_configure() {
 
 	if tc-is-cross-compiler; then
 		(
-		multijob_child_init
+			multijob_child_init
 			cd "${WORKDIR}"/${CBUILD} >/dev/null || die
 			OPT="-O1" CFLAGS="" CPPFLAGS="" LDFLAGS="" CC="" \
 			"${S}"/configure \
@@ -165,7 +164,7 @@ src_configure() {
 		dbmliborder+="${dbmliborder:+:}gdbm"
 	fi
 
-	cd "${WORKDIR}"/${CHOST}
+	cd "${WORKDIR}"/${CHOST} || die
 	ECONF_SOURCE=${S} OPT="" \
 	econf \
 		--with-fpectl \
@@ -280,9 +279,6 @@ src_install() {
 		-e "s/\(CONFIGURE_LDFLAGS=\).*/\1/" \
 		-e "s/\(PY_LDFLAGS=\).*/\1/" \
 		-i "${libdir}/config-${SLOT}/Makefile" || die "sed failed"
-
-	# Backwards compat with Gentoo divergence.
-	dosym python${SLOT}-config /usr/bin/python-config-${SLOT}
 
 	# Fix collisions between different slots of Python.
 	rm "${ED}usr/$(get_libdir)/libpython3.so" || die
