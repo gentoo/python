@@ -1,0 +1,10 @@
+--- Lib/site.py
++++ Lib/site.py
+@@ -269,6 +269,7 @@
+                                         "python" + sys.version[:3],
+                                         "site-packages"))
+             sitedirs.append(os.path.join(prefix, "lib", "site-python"))
++            sitedirs.append(os.path.join(prefix, "lib", "portage", "pym"))
+         else:
+             sitedirs.append(prefix)
+             sitedirs.append(os.path.join(prefix, "lib", "site-packages"))

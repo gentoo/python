@@ -1,0 +1,28 @@
+# HG changeset patch
+# User Benjamin Peterson <benjamin@python.org>
+# Date 1390541532 18000
+#      Fri Jan 24 00:32:12 2014 -0500
+# Branch 2.7
+# Node ID 79b82ebc4fd17fda401c32840da1da0577e3c73e
+# Parent  f28b60141c5c417111670a22b223f0c411136c7b
+use new readline function types (closes #20374)
+
+diff --git a/Modules/readline.c b/Modules/readline.c
+--- a/Modules/readline.c
++++ b/Modules/readline.c
+@@ -911,12 +911,12 @@
+     rl_bind_key_in_map ('\t', rl_complete, emacs_meta_keymap);
+     rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
+     /* Set our hook functions */
+-    rl_startup_hook = (Function *)on_startup_hook;
++    rl_startup_hook = (rl_hook_func_t *)on_startup_hook;
+ #ifdef HAVE_RL_PRE_INPUT_HOOK
+-    rl_pre_input_hook = (Function *)on_pre_input_hook;
++    rl_pre_input_hook = (rl_hook_func_t *)on_pre_input_hook;
+ #endif
+     /* Set our completion function */
+-    rl_attempted_completion_function = (CPPFunction *)flex_complete;
++    rl_attempted_completion_function = (rl_completion_func_t *)flex_complete;
+     /* Set Python word break characters */
+     completer_word_break_characters =
+         rl_completer_word_break_characters =
