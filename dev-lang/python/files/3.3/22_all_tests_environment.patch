@@ -1,0 +1,192 @@
+http://bugs.python.org/issue1674555
+
+--- Lib/site.py
++++ Lib/site.py
+@@ -587,8 +587,9 @@
+     known_paths = venv(known_paths)
+     if ENABLE_USER_SITE is None:
+         ENABLE_USER_SITE = check_enableusersite()
+-    known_paths = addusersitepackages(known_paths)
+-    known_paths = addsitepackages(known_paths)
++    if os.environ.get("_PYTHONNOSITEPACKAGES") is None:
++        known_paths = addusersitepackages(known_paths)
++        known_paths = addsitepackages(known_paths)
+     if sys.platform == 'os2emx':
+         setBEGINLIBPATH()
+     setquit()
+--- Lib/test/regrtest.py
++++ Lib/test/regrtest.py
+@@ -188,6 +188,7 @@
+ import unittest
+ import warnings
+ from inspect import isabstract
++from subprocess import Popen, PIPE
+ 
+ try:
+     import threading
+@@ -578,6 +579,62 @@
+     support.use_resources = use_resources
+     save_modules = sys.modules.keys()
+ 
++    opt_args = support.args_from_interpreter_flags()
++    base_cmd = [sys.executable] + opt_args + ['-m', 'test.regrtest']
++    debug_output_pat = re.compile(r"\[\d+ refs\]$")
++
++    def get_args_tuple(test, verbose, quiet, huntrleaks, debug, use_resources,
++                       output_on_failure, failfast, match_tests, timeout):
++        return (
++            (test, verbose, quiet),
++            dict(huntrleaks=huntrleaks, debug=debug,
++                 use_resources=use_resources,
++                 output_on_failure=output_on_failure, failfast=failfast,
++                 match_tests=match_tests, timeout=timeout)
++        )
++
++    def _runtest(test, verbose, quiet, huntrleaks=False, debug=False,
++                 use_resources=None, output_on_failure=False, failfast=False,
++                 match_tests=None, timeout=None):
++        if test == "test_site":
++            args_tuple = get_args_tuple(test, verbose, quiet, huntrleaks, debug,
++                                        use_resources, output_on_failure,
++                                        failfast, match_tests, timeout)
++            env = os.environ.copy()
++            try:
++                del env["_PYTHONNOSITEPACKAGES"]
++            except KeyError:
++                pass
++            popen = Popen(base_cmd + ['--slaveargs', json.dumps(args_tuple)],
++                          stdout=PIPE, stderr=PIPE,
++                          universal_newlines=True,
++                          close_fds=(os.name != 'nt'),
++                          env=env)
++            stdout, stderr = popen.communicate()
++            retcode = popen.wait()
++            # Strip last refcount output line if it exists, since it
++            # comes from the shutdown of the interpreter in the subcommand.
++            stderr = debug_output_pat.sub("", stderr)
++            stdout, _, result = stdout.strip().rpartition("\n")
++            if retcode != 0:
++                result = (CHILD_ERROR, "Exit code %s" % retcode)
++            else:
++                result = json.loads(result)
++            if stdout:
++                print(stdout)
++            if stderr:
++                print(stderr, file=sys.stderr)
++            if result[0] == INTERRUPTED:
++                assert result[1] == 'KeyboardInterrupt'
++                raise KeyboardInterrupt
++            return result
++        else:
++            return runtest(test, verbose, quiet, huntrleaks=huntrleaks,
++                           debug=debug, use_resources=use_resources,
++                           output_on_failure=output_on_failure,
++                           failfast=failfast, match_tests=match_tests,
++                           timeout=timeout)
++
+     def accumulate_result(test, result):
+         ok, test_time = result
+         test_times.append((test_time, test))
+@@ -615,12 +672,8 @@
+             print("Multiprocess option requires thread support")
+             sys.exit(2)
+         from queue import Queue
+-        from subprocess import Popen, PIPE
+-        debug_output_pat = re.compile(r"\[\d+ refs\]$")
+         output = Queue()
+         pending = MultiprocessTests(tests)
+-        opt_args = support.args_from_interpreter_flags()
+-        base_cmd = [sys.executable] + opt_args + ['-m', 'test.regrtest']
+         def work():
+             # A worker thread.
+             try:
+@@ -630,13 +683,9 @@
+                     except StopIteration:
+                         output.put((None, None, None, None))
+                         return
+-                    args_tuple = (
+-                        (test, verbose, quiet),
+-                        dict(huntrleaks=huntrleaks, use_resources=use_resources,
+-                             debug=debug, output_on_failure=verbose3,
+-                             timeout=timeout, failfast=failfast,
+-                             match_tests=match_tests)
+-                    )
++                    args_tuple = get_args_tuple(test, verbose, quiet, huntrleaks,
++                                                debug, use_resources, verbose3,
++                                                failfast, match_tests, timeout)
+                     # -E is needed by some tests, e.g. test_import
+                     # Running the child from the same working directory ensures
+                     # that TEMPDIR for the child is the same when
+@@ -707,14 +756,14 @@
+             if trace:
+                 # If we're tracing code coverage, then we don't exit with status
+                 # if on a false return value from main.
+-                tracer.runctx('runtest(test, verbose, quiet, timeout=timeout)',
++                tracer.runctx('_runtest(test, verbose, quiet, timeout=timeout)',
+                               globals=globals(), locals=vars())
+             else:
+                 try:
+-                    result = runtest(test, verbose, quiet, huntrleaks, debug,
+-                                     output_on_failure=verbose3,
+-                                     timeout=timeout, failfast=failfast,
+-                                     match_tests=match_tests)
++                    result = _runtest(test, verbose, quiet, huntrleaks, debug,
++                                      output_on_failure=verbose3,
++                                      timeout=timeout, failfast=failfast,
++                                      match_tests=match_tests)
+                     accumulate_result(test, result)
+                 except KeyboardInterrupt:
+                     interrupted = True
+@@ -785,7 +834,7 @@
+             sys.stdout.flush()
+             try:
+                 verbose = True
+-                ok = runtest(test, True, quiet, huntrleaks, debug, timeout=timeout)
++                ok = _runtest(test, True, quiet, huntrleaks, debug, timeout=timeout)
+             except KeyboardInterrupt:
+                 # print a newline separate from the ^C
+                 print()
+@@ -1182,8 +1231,9 @@
+         for name, get, restore in self.resource_info():
+             current = get()
+             original = saved_values.pop(name)
+-            # Check for changes to the resource's value
+-            if current != original:
++            # Check for changes to the resource's value. test_site is always run
++            # in a subprocess and is allowed to change os.environ and sys.path.
++            if current != original and self.testname != "test_site":
+                 self.changed = True
+                 restore(original)
+                 if not self.quiet:
+--- Lib/test/test_site.py
++++ Lib/test/test_site.py
+@@ -8,6 +8,7 @@
+ import test.support
+ from test.support import captured_stderr, TESTFN, EnvironmentVarGuard
+ import builtins
++import imp
+ import os
+ import sys
+ import re
+@@ -26,6 +27,10 @@
+ 
+ import site
+ 
++if "_PYTHONNOSITEPACKAGES" in os.environ:
++    del os.environ["_PYTHONNOSITEPACKAGES"]
++    imp.reload(site)
++
+ if site.ENABLE_USER_SITE and not os.path.isdir(site.USER_SITE):
+     # need to add user site directory for tests
+     os.makedirs(site.USER_SITE)
+--- Makefile.pre.in
++++ Makefile.pre.in
+@@ -883,7 +883,7 @@
+ ######################################################################
+ 
+ TESTOPTS=	$(EXTRATESTOPTS)
+-TESTPYTHON=	$(RUNSHARED) ./$(BUILDPYTHON) $(TESTPYTHONOPTS)
++TESTPYTHON=	_PYTHONNOSITEPACKAGES=1 $(RUNSHARED) ./$(BUILDPYTHON) $(TESTPYTHONOPTS)
+ TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
+ TESTTIMEOUT=	3600
+ 

@@ -1,0 +1,14 @@
+http://bugs.python.org/issue20901
+http://hg.python.org/cpython/rev/dbc9e3ed5e9f
+
+--- Lib/sqlite3/test/hooks.py
++++ Lib/sqlite3/test/hooks.py
+@@ -162,7 +162,7 @@
+             create table bar (a, b)
+             """)
+         second_count = len(progress_calls)
+-        self.assertGreater(first_count, second_count)
++        self.assertGreaterEqual(first_count, second_count)
+ 
+     def CheckCancelOperation(self):
+         """
