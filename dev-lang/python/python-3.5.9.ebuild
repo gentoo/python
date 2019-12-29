@@ -8,12 +8,12 @@ inherit autotools flag-o-matic pax-utils python-utils-r1 toolchain-funcs
 
 MY_P="Python-${PV}"
 PYVER=$(ver_cut 1-2)
-PATCHSET_VERSION="3.5.4-0"
+PATCHSET="python-gentoo-patches-3.5.9"
 
 DESCRIPTION="An interpreted, interactive, object-oriented programming language"
 HOMEPAGE="https://www.python.org/"
 SRC_URI="https://www.python.org/ftp/python/${PV}/${MY_P}.tar.xz
-	https://dev.gentoo.org/~floppym/python/python-gentoo-patches-${PATCHSET_VERSION}.tar.xz"
+	https://dev.gentoo.org/~mgorny/dist/python/${PATCHSET}.tar.xz"
 S="${WORKDIR}/${MY_P}"
 
 LICENSE="PSF-2"
@@ -62,13 +62,8 @@ src_prepare() {
 	rm -fr Modules/_ctypes/libffi* || die
 	rm -fr Modules/zlib || die
 
-	eapply -p0 "${WORKDIR}"/patches
-
 	local PATCHES=(
-		"${FILESDIR}/${PN}-3.4.3-ncurses-pkg-config.patch"
-		"${FILESDIR}/${PN}-3.5-distutils-OO-build.patch"
-		"${FILESDIR}/3.6-disable-nis.patch"
-		"${FILESDIR}/python-3.5.5-hash-unaligned.patch"
+		"${WORKDIR}/${PATCHSET}"
 	)
 
 	default
